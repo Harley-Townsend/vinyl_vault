@@ -26,8 +26,8 @@ function StarRating({ rating, onRate, editable = false }: { rating: number; onRa
         disabled={!editable}
         style={{ marginRight: 4 }}
       >
-        <Text style={{ fontSize: 24 }}>
-          {isFilled ? "★" : isHalf ? "⯨" : "☆"}
+        <Text style={{ fontSize: 24, color: isFilled || isHalf ? colors.primary : colors.muted }}>
+          {isFilled ? "★" : isHalf ? "★" : "☆"}
         </Text>
       </Pressable>
     );
@@ -64,7 +64,7 @@ const mockLogs: AlbumLog[] = [
     artist: "Taylor Swift",
     rating: 4.5,
     format: "Vinyl",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273e8b8c8b8a8a8a8a8a8a8a8a",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5",
     review: "Amazing album! Love the production.",
     userName: "musiclover92",
     likes: 234,
@@ -79,7 +79,7 @@ const mockLogs: AlbumLog[] = [
     artist: "Fleetwood Mac",
     rating: 5,
     format: "CD",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273f1f1f1f1f1f1f1f1f1f1f1f",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273f9f9f9f9f9f9f9f9f9f9f9f9",
     review: "Classic masterpiece. Never gets old.",
     userName: "vinylcollector",
     likes: 567,
@@ -93,7 +93,7 @@ const mockLogs: AlbumLog[] = [
     artist: "The Weeknd",
     rating: 4,
     format: "Spotify",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273a2a2a2a2a2a2a2a2a2a2a2a",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b2735a5a5a5a5a5a5a5a5a5a5a5a",
     review: "Great synth-pop vibes throughout.",
     userName: "synthwave_fan",
     likes: 189,
@@ -241,8 +241,8 @@ export default function HomeScreen() {
             </View>
           )}
           ListHeaderComponent={
-            <View className="p-4 pb-2">
-              <Text className="text-3xl font-bold text-foreground mb-2">Vinyl Vault</Text>
+            <View className="p-6 pb-4 mt-2">
+              <Text className="text-4xl font-bold text-foreground mb-2">Vinyl Vault</Text>
               <Text className="text-muted">Community album logs</Text>
             </View>
           }
@@ -279,10 +279,13 @@ export default function HomeScreen() {
         >
           <View style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Header */}
-            <View className="flex-row items-center justify-between p-4 border-b border-border">
+            <View className="flex-row items-center justify-between p-6 pb-4 border-b border-border mt-2">
               <Text className="text-2xl font-bold text-foreground">Comments</Text>
-              <Pressable onPress={() => setCommentModalVisible(false)}>
-                <Text className="text-2xl">✕</Text>
+              <Pressable 
+                onPress={() => setCommentModalVisible(false)}
+                style={{ padding: 12, marginRight: -12 }}
+              >
+                <Text className="text-3xl">✕</Text>
               </Pressable>
             </View>
 
