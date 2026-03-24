@@ -3,21 +3,26 @@
 ## Phase 3 - Enhanced Features
 
 ### Authentication
-- [ ] Email/password signup screen
-- [ ] Email/password login screen
-- [ ] Session management
-- [ ] Auth state persistence
+- [x] Email/password signup screen
+- [x] Email/password login screen
+- [x] Session management
+- [x] Auth state persistence
 
 ### Music API Integration
-- [ ] MusicBrainz API service
-- [ ] Real album search functionality
-- [ ] Album metadata fetching
-- [ ] Cover art integration
+- [x] MusicBrainz API service
+- [ ] Real album search functionality (needs fixing)
+- [x] Album metadata fetching
+- [ ] Cover art integration (needs fixing)
 
 ### Log Album Modal
-- [ ] Modal component creation
-- [ ] Rating picker (half-stars)
-- [ ] Format selection
-- [ ] Review text input
-- [ ] First-time listening toggle
-- [ ] Submit and close functionality
+- [x] Modal component creation
+- [ ] Rating picker (half-stars) - needs improvement
+- [x] Format selection
+- [x] Review text input
+- [x] First-time listening toggle
+- [x] Submit and close functionality
+
+## Phase 4 - Bug Fixes
+- [ ] Fix album cover image display
+- [ ] Fix MusicBrainz API search results
+- [ ] Improve half-star rating interface

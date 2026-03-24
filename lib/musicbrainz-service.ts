@@ -17,16 +17,61 @@ export interface Album {
 }
 
 /**
+ * Get cover art URL for an album (with fallback)
+ */
+async function getCoverArtUrl(mbid: string): Promise<string | undefined> {
+  try {
+    // Try to fetch from Cover Art Archive
+    const response = await fetch(`${COVER_ART_API}/release/${mbid}/front-250.jpg`, {
+      method: "HEAD",
+    });
+
+    if (response.ok) {
+      return `${COVER_ART_API}/release/${mbid}/front-250.jpg`;
+    }
+
+    // Fallback: try to get JSON response with image URLs
+    const jsonResponse = await fetch(`${COVER_ART_API}/release/${mbid}`, {
+      headers: {
+        "User-Agent": "VinylVault/1.0 (music-app)",
+      },
+    });
+
+    if (jsonResponse.ok) {
+      const data = await jsonResponse.json();
+      const frontImage = data.images?.find((img: any) => img.front);
+      if (frontImage?.thumbnails?.small) {
+        return frontImage.thumbnails.small;
+      }
+      if (frontImage?.image) {
+        return frontImage.image;
+      }
+    }
+
+    return undefined;
+  } catch (error) {
+    console.warn("Error fetching cover art for", mbid, error);
+    return undefined;
+  }
+}
+
+/**
  * Search for albums by title and/or artist
  */
 export async function searchAlbums(query: string, limit: number = 20): Promise<Album[]> {
   try {
-    // Build search query
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    // Build search query - search for both release and recording
     const searchParams = new URLSearchParams({
-      query: query,
+      query: query.trim(),
       fmt: "json",
       limit: limit.toString(),
     });
+
+    console.log("Searching MusicBrainz for:", query);
 
     const response = await fetch(`${MUSICBRAINZ_API}/release?${searchParams}`, {
       headers: {
@@ -35,36 +80,50 @@ export async function searchAlbums(query: string, limit: number = 20): Promise<A
     });
 
     if (!response.ok) {
-      console.error("MusicBrainz API error:", response.status);
+      console.error("MusicBrainz API error:", response.status, response.statusText);
       return [];
     }
 
     const data = await response.json();
     const releases = data.releases || [];
 
+    console.log(`Found ${releases.length} releases for "${query}"`);
+
+    if (releases.length === 0) {
+      return [];
+    }
+
     // Transform MusicBrainz data to our Album format
-    const albums: Album[] = await Promise.all(
-      releases.map(async (release: any) => {
+    const albums: Album[] = [];
+
+    for (const release of releases.slice(0, limit)) {
+      try {
         const album: Album = {
           id: release.id,
           mbid: release.id,
-          title: release.title,
-          artistName: release["artist-credit"]?.[0]?.artist?.name || "Unknown Artist",
-          releaseDate: release.date,
+          title: release.title || "Unknown Album",
+          artistName:
+            release["artist-credit"]?.[0]?.artist?.name ||
+            release["artist-credit"]?.[0]?.name ||
+            "Unknown Artist",
+          releaseDate: release.date || release["first-release-date"],
           genres: release.tags?.map((tag: any) => tag.name) || [],
         };
 
         // Try to fetch cover art
-        try {
-          album.coverArtUrl = await getCoverArtUrl(release.id);
-        } catch (error) {
-          console.warn("Failed to fetch cover art for", release.id);
+        const coverUrl = await getCoverArtUrl(release.id);
+        if (coverUrl) {
+          album.coverArtUrl = coverUrl;
         }
 
-        return album;
-      })
-    );
+        albums.push(album);
+      } catch (error) {
+        console.warn("Error processing release:", error);
+        continue;
+      }
+    }
 
+    console.log(`Processed ${albums.length} albums with cover art`);
     return albums;
   } catch (error) {
     console.error("Error searching albums:", error);
@@ -73,39 +132,18 @@ export async function searchAlbums(query: string, limit: number = 20): Promise<A
 }
 
 /**
- * Get cover art URL for an album
- */
-async function getCoverArtUrl(mbid: string): Promise<string | undefined> {
-  try {
-    const response = await fetch(`${COVER_ART_API}/release/${mbid}`, {
-      headers: {
-        "User-Agent": "VinylVault/1.0 (music-app)",
-      },
-    });
-
-    if (!response.ok) {
-      return undefined;
-    }
-
-    const data = await response.json();
-    const frontImage = data.images?.find((img: any) => img.front);
-    return frontImage?.thumbnails?.small || frontImage?.image;
-  } catch (error) {
-    console.warn("Error fetching cover art:", error);
-    return undefined;
-  }
-}
-
-/**
  * Get detailed album information by MBID
  */
 export async function getAlbumDetails(mbid: string): Promise<Album | null> {
   try {
-    const response = await fetch(`${MUSICBRAINZ_API}/release/${mbid}?fmt=json&inc=artist-credits+genres+tags`, {
-      headers: {
-        "User-Agent": "VinylVault/1.0 (music-app)",
-      },
-    });
+    const response = await fetch(
+      `${MUSICBRAINZ_API}/release/${mbid}?fmt=json&inc=artist-credits+genres+tags`,
+      {
+        headers: {
+          "User-Agent": "VinylVault/1.0 (music-app)",
+        },
+      }
+    );
 
     if (!response.ok) {
       return null;
@@ -116,17 +154,16 @@ export async function getAlbumDetails(mbid: string): Promise<Album | null> {
     const album: Album = {
       id: release.id,
       mbid: release.id,
-      title: release.title,
+      title: release.title || "Unknown Album",
       artistName: release["artist-credit"]?.[0]?.artist?.name || "Unknown Artist",
       releaseDate: release.date,
       genres: release.tags?.map((tag: any) => tag.name) || [],
     };
 
     // Fetch cover art
-    try {
-      album.coverArtUrl = await getCoverArtUrl(mbid);
-    } catch (error) {
-      console.warn("Failed to fetch cover art");
+    const coverUrl = await getCoverArtUrl(mbid);
+    if (coverUrl) {
+      album.coverArtUrl = coverUrl;
     }
 
     return album;

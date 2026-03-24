@@ -1,4 +1,4 @@
-import { Modal, View, Text, TextInput, Pressable, ScrollView, Switch } from "react-native";
+import { Modal, View, Text, TextInput, Pressable, ScrollView, Switch, GestureResponderEvent } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
 import * as Haptics from "expo-haptics";
@@ -57,7 +57,8 @@ export function LogAlbumModal({ visible, onClose, onSubmit, initialData }: LogAl
     onClose();
   };
 
-  const StarRating = () => {
+  // Improved star rating with larger tap targets
+  const StarRatingPicker = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       const isFilled = i <= Math.floor(rating);
@@ -70,15 +71,49 @@ export function LogAlbumModal({ visible, onClose, onSubmit, initialData }: LogAl
             setRating(i);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
-          style={{ marginRight: 8 }}
+          style={{ marginRight: 12, paddingHorizontal: 8, paddingVertical: 8 }}
         >
-          <Text style={{ fontSize: 32 }}>
+          <Text style={{ fontSize: 48 }}>
             {isFilled ? "★" : isHalf ? "⯨" : "☆"}
           </Text>
         </Pressable>
       );
     }
-    return <View className="flex-row">{stars}</View>;
+    return <View className="flex-row justify-center">{stars}</View>;
+  };
+
+  // Quick rating buttons for easier selection
+  const QuickRatingButtons = () => {
+    const ratings = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+    return (
+      <View className="flex-row flex-wrap gap-2 justify-center">
+        {ratings.map((r) => (
+          <Pressable
+            key={r}
+            onPress={() => {
+              setRating(r);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            style={({ pressed }) => [
+              {
+                backgroundColor: rating === r ? colors.primary : colors.surface,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
+            className="px-3 py-2 rounded-lg border border-border"
+          >
+            <Text
+              style={{
+                color: rating === r ? "#fff" : colors.foreground,
+              }}
+              className="font-semibold text-sm"
+            >
+              {r}★
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    );
   };
 
   return (
@@ -122,15 +157,21 @@ export function LogAlbumModal({ visible, onClose, onSubmit, initialData }: LogAl
               />
             </View>
 
-            {/* Rating */}
+            {/* Rating - Large Star Picker */}
             <View>
-              <Text className="text-sm font-semibold text-foreground mb-3">Rating *</Text>
-              <StarRating />
+              <Text className="text-sm font-semibold text-foreground mb-3">Rating * (Tap a star)</Text>
+              <StarRatingPicker />
               {rating > 0 && (
-                <Text className="text-sm text-primary mt-2">
+                <Text className="text-center text-lg text-primary font-bold mt-2">
                   {rating.toFixed(1)} / 5.0 ⭐
                 </Text>
               )}
+            </View>
+
+            {/* Quick Rating Buttons */}
+            <View>
+              <Text className="text-xs font-semibold text-muted mb-2">Or select quickly:</Text>
+              <QuickRatingButtons />
             </View>
 
             {/* Format */}
