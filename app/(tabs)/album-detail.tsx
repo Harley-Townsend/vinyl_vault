@@ -154,17 +154,7 @@ export default function AlbumDetailScreen() {
             </View>
           )}
 
-          {/* Log Album Button */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              // TODO: Open log album modal with this album pre-filled
-            }}
-            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-            className="bg-primary rounded-lg py-3 items-center"
-          >
-            <Text className="text-white font-semibold text-base">Log This Album</Text>
-          </Pressable>
+
         </View>
 
         {/* Reviews Section */}

@@ -119,7 +119,7 @@ export default function HomeScreen() {
       artist: data.artist,
       rating: data.rating,
       format: data.format,
-      coverUrl: "https://via.placeholder.com/150",
+      coverUrl: data.coverUrl,
       review: data.review,
       userName: "You",
       likes: 0,
