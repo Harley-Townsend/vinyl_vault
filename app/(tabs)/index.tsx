@@ -1,40 +1,14 @@
 import { ScrollView, Text, View, Pressable, Image, FlatList, TextInput, Modal, KeyboardAvoidingView, Platform } from "react-native";
+import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
 import * as Haptics from "expo-haptics";
 import { LogAlbumModal, type LogAlbumData } from "@/components/log-album-modal";
+import { HalfStarRating } from "@/components/half-star-rating";
 
-// Half-star rating component
-function StarRating({ rating, onRate, editable = false }: { rating: number; onRate?: (r: number) => void; editable?: boolean }) {
-  const colors = useColors();
-  const stars = [];
-  
-  for (let i = 1; i <= 5; i++) {
-    const isFilled = i <= Math.floor(rating);
-    const isHalf = i - 0.5 <= rating && rating < i;
-    
-    stars.push(
-      <Pressable
-        key={i}
-        onPress={() => {
-          if (editable && onRate) {
-            onRate(i);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }}
-        disabled={!editable}
-        style={{ marginRight: 4 }}
-      >
-        <Text style={{ fontSize: 24, color: isFilled || isHalf ? colors.primary : colors.muted }}>
-          {isFilled ? "★" : isHalf ? "★" : "☆"}
-        </Text>
-      </Pressable>
-    );
-  }
-  
-  return <View className="flex-row">{stars}</View>;
-}
+// Alias for compatibility
+const StarRating = HalfStarRating;
 
 interface Comment {
   id: number;
@@ -79,7 +53,7 @@ const mockLogs: AlbumLog[] = [
     artist: "Fleetwood Mac",
     rating: 5,
     format: "CD",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273f9f9f9f9f9f9f9f9f9f9f9f9",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b27357df7ce0eac715cf70e519a7",
     review: "Classic masterpiece. Never gets old.",
     userName: "vinylcollector",
     likes: 567,
@@ -93,7 +67,7 @@ const mockLogs: AlbumLog[] = [
     artist: "The Weeknd",
     rating: 4,
     format: "Spotify",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b2735a5a5a5a5a5a5a5a5a5a5a5a",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273a3eff72f62782fb589a492f9",
     review: "Great synth-pop vibes throughout.",
     userName: "synthwave_fan",
     likes: 189,
@@ -102,6 +76,7 @@ const mockLogs: AlbumLog[] = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const colors = useColors();
   const [likedLogs, setLikedLogs] = useState<Set<number>>(new Set());
   const [logModalVisible, setLogModalVisible] = useState(false);
@@ -109,6 +84,24 @@ export default function HomeScreen() {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
+
+  const handleAlbumTap = (log: typeof mockLogs[0]) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: "/album-detail",
+      params: {
+        id: log.id.toString(),
+        title: log.albumTitle,
+        artist: log.artist,
+        coverUrl: log.coverUrl,
+        releaseDate: "2024",
+        genre: "Unknown",
+        description: log.review,
+        rating: log.rating.toString(),
+        format: log.format,
+      },
+    });
+  };
 
   const toggleLike = (logId: number) => {
     const newLiked = new Set(likedLogs);
@@ -176,15 +169,19 @@ export default function HomeScreen() {
           renderItem={({ item }) => (
             <View className="border-b border-border p-4">
               {/* Album Header */}
-              <View className="flex-row gap-3 mb-3">
-                {/* Album Cover */}
-                <Image
-                  source={{ uri: item.coverUrl }}
-                  style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.border }}
-                />
-                
-                {/* Album Info */}
-                <View className="flex-1">
+              <Pressable
+                onPress={() => handleAlbumTap(item)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+              >
+                <View className="flex-row gap-3 mb-3">
+                  {/* Album Cover */}
+                  <Image
+                    source={{ uri: item.coverUrl }}
+                    style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.border }}
+                  />
+                  
+                  {/* Album Info */}
+                  <View className="flex-1">
                   <Text className="text-xs text-muted mb-1">{item.userName}</Text>
                   <Text className="text-lg font-bold text-foreground">{item.albumTitle}</Text>
                   <Text className="text-sm text-muted">{item.artist}</Text>
@@ -196,6 +193,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
+              </Pressable>
 
               {/* Review */}
               <Text className="text-sm text-foreground mb-3">{item.review}</Text>
