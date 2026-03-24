@@ -90,15 +90,13 @@ export default function HomeScreen() {
     router.push({
       pathname: "/album-detail",
       params: {
-        id: log.id.toString(),
+        albumId: log.id.toString(),
         title: log.albumTitle,
         artist: log.artist,
         coverUrl: log.coverUrl,
         releaseDate: "2024",
-        genre: "Unknown",
-        description: log.review,
-        rating: log.rating.toString(),
-        format: log.format,
+        genres: "Pop,Rock",
+        description: "A great album with amazing production and memorable tracks.",
       },
     });
   };
