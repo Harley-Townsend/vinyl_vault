@@ -170,18 +170,18 @@ export function LogAlbumModal({ visible, onClose, onSubmit, initialData }: LogAl
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1, backgroundColor: colors.background }}
       >
-        {/* Header */}
-        <View className="flex-row items-center justify-between p-4 border-b border-border">
+        {/* Header - Lowered for mobile accessibility */}
+        <View className="flex-row items-center justify-between p-6 pb-8 border-b border-border">
           <Pressable
             onPress={handleBack}
             style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-            className="px-3 py-2"
+            className="px-3 py-3"
           >
             <Text className="text-base font-semibold text-primary">
               {step === "details" ? "Back" : "Cancel"}
             </Text>
           </Pressable>
-          <Text className="text-lg font-bold text-foreground">
+          <Text className="text-xl font-bold text-foreground">
             {step === "search" ? "Find Album" : "Log Album"}
           </Text>
           <View className="w-12" />
