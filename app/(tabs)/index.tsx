@@ -251,7 +251,7 @@ export default function HomeScreen() {
                   style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
                   className="flex-row items-center gap-1"
                 >
-                  <Text className={`text-lg ${ likedLogs.has(item.id) ? 'text-primary' : 'text-muted'}`}>{likedLogs.has(item.id) ? '❤️' : '🤍'}</Text>
+                  <Text style={{ color: likedLogs.has(item.id) ? colors.primary : colors.muted, fontSize: 18 }}>♥</Text>
                   <Text className="text-sm text-muted">{item.likes}</Text>
                 </Pressable>
                 <Pressable
@@ -327,7 +327,9 @@ export default function HomeScreen() {
               renderItem={({ item }) => (
                 <View className="bg-surface rounded-lg p-3 m-4 mb-2">
                   <View className="flex-row justify-between mb-1">
-                    <Text className="text-sm font-semibold text-foreground">{item.userName}</Text>
+                    <Pressable onPress={() => { setCommentModalVisible(false); handleUserTap(item.userId); }}>
+                      <Text className="text-sm font-semibold text-primary">{item.userName}</Text>
+                    </Pressable>
                     <Text className="text-xs text-muted">{item.timestamp}</Text>
                   </View>
                   <Text className="text-sm text-foreground">{item.text}</Text>
