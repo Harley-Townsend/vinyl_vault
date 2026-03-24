@@ -1,50 +1,29 @@
-import { ScrollView, Text, View, Pressable, Image, TextInput, FlatList } from "react-native";
+import { ScrollView, Text, View, Pressable, Image, TextInput, FlatList, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
+import { searchAlbums, type Album } from "@/lib/musicbrainz-service";
 
-// Mock album data
-const mockAlbums = [
+// Default albums to show
+const defaultAlbums: Album[] = [
   {
-    id: 1,
+    id: "1",
+    mbid: "1",
     title: "Midnights",
-    artist: "Taylor Swift",
-    year: 2022,
-    genre: "Pop",
-    coverUrl: "https://via.placeholder.com/150",
+    artistName: "Taylor Swift",
+    releaseDate: "2022",
+    genres: ["Pop"],
+    coverArtUrl: "https://via.placeholder.com/150",
   },
   {
-    id: 2,
+    id: "2",
+    mbid: "2",
     title: "Rumours",
-    artist: "Fleetwood Mac",
-    year: 1977,
-    genre: "Rock",
-    coverUrl: "https://via.placeholder.com/150",
-  },
-  {
-    id: 3,
-    title: "The Dark Side of the Moon",
-    artist: "Pink Floyd",
-    year: 1973,
-    genre: "Progressive Rock",
-    coverUrl: "https://via.placeholder.com/150",
-  },
-  {
-    id: 4,
-    title: "Abbey Road",
-    artist: "The Beatles",
-    year: 1969,
-    genre: "Rock",
-    coverUrl: "https://via.placeholder.com/150",
-  },
-  {
-    id: 5,
-    title: "Thriller",
-    artist: "Michael Jackson",
-    year: 1982,
-    genre: "Pop",
-    coverUrl: "https://via.placeholder.com/150",
+    artistName: "Fleetwood Mac",
+    releaseDate: "1977",
+    genres: ["Rock"],
+    coverArtUrl: "https://via.placeholder.com/150",
   },
 ];
 
@@ -52,22 +31,43 @@ export default function SearchScreen() {
   const colors = useColors();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
+  const [albums, setAlbums] = useState<Album[]>(defaultAlbums);
+  const [loading, setLoading] = useState(false);
 
   const genres = ["All", "Pop", "Rock", "Jazz", "Hip-Hop", "Classical", "Electronic"];
 
-  const filteredAlbums = mockAlbums.filter((album) => {
-    const matchesSearch =
-      album.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      album.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGenre = !selectedGenre || selectedGenre === "All" || album.genre === selectedGenre;
-    return matchesSearch && matchesGenre;
+  useEffect(() => {
+    if (searchQuery.trim().length > 2) {
+      const performSearch = async () => {
+        setLoading(true);
+        try {
+          const results = await searchAlbums(searchQuery, 20);
+          setAlbums(results.length > 0 ? results : defaultAlbums);
+        } catch (error) {
+          console.error("Search error:", error);
+          setAlbums(defaultAlbums);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const timer = setTimeout(performSearch, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setAlbums(defaultAlbums);
+    }
+  }, [searchQuery]);
+
+  const filteredAlbums = albums.filter((album) => {
+    const matchesGenre = !selectedGenre || selectedGenre === "All" || album.genres?.includes(selectedGenre);
+    return matchesGenre;
   });
 
   return (
     <ScreenContainer className="p-0">
       <FlatList
         data={filteredAlbums}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.mbid}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
         renderItem={({ item }) => (
@@ -79,7 +79,7 @@ export default function SearchScreen() {
           >
             <View className="bg-surface rounded-lg overflow-hidden">
               <Image
-                source={{ uri: item.coverUrl }}
+                source={{ uri: item.coverArtUrl || "https://via.placeholder.com/150" }}
                 style={{ width: "100%", height: 150, backgroundColor: colors.border }}
               />
               <View className="p-3">
@@ -87,9 +87,9 @@ export default function SearchScreen() {
                   {item.title}
                 </Text>
                 <Text className="text-xs text-muted mt-1" numberOfLines={1}>
-                  {item.artist}
+                  {item.artistName}
                 </Text>
-                <Text className="text-xs text-muted mt-1">{item.year}</Text>
+                <Text className="text-xs text-muted mt-1">{item.releaseDate?.substring(0, 4)}</Text>
               </View>
             </View>
           </Pressable>
@@ -140,6 +140,12 @@ export default function SearchScreen() {
               ))}
             </ScrollView>
 
+            {loading && (
+              <View className="flex-row items-center gap-2 mb-3">
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text className="text-sm text-muted">Searching...</Text>
+              </View>
+            )}
             <Text className="text-sm text-muted mb-3">{filteredAlbums.length} albums found</Text>
           </View>
         }

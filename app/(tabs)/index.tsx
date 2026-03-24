@@ -3,6 +3,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
 import * as Haptics from "expo-haptics";
+import { LogAlbumModal, type LogAlbumData } from "@/components/log-album-modal";
 
 // Half-star rating component
 function StarRating({ rating, onRate, editable = false }: { rating: number; onRate?: (r: number) => void; editable?: boolean }) {
@@ -75,6 +76,8 @@ const mockLogs = [
 export default function HomeScreen() {
   const colors = useColors();
   const [likedLogs, setLikedLogs] = useState<Set<number>>(new Set());
+  const [logModalVisible, setLogModalVisible] = useState(false);
+  const [logs, setLogs] = useState(mockLogs);
 
   const toggleLike = (logId: number) => {
     const newLiked = new Set(likedLogs);
@@ -87,10 +90,27 @@ export default function HomeScreen() {
     setLikedLogs(newLiked);
   };
 
+  const handleLogAlbum = (data: LogAlbumData) => {
+    const newLog = {
+      id: logs.length + 1,
+      albumTitle: data.albumTitle,
+      artist: data.artist,
+      rating: data.rating,
+      format: data.format,
+      coverUrl: "https://via.placeholder.com/100",
+      review: data.review,
+      userName: "You",
+      likes: 0,
+    };
+    setLogs([newLog, ...logs]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
   return (
-    <ScreenContainer className="p-0">
-      <FlatList
-        data={mockLogs}
+    <>
+      <ScreenContainer className="p-0">
+        <FlatList
+          data={logs}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View className="border-b border-border p-4">
@@ -149,6 +169,23 @@ export default function HomeScreen() {
         }
         scrollEnabled={true}
       />
-    </ScreenContainer>
+      </ScreenContainer>
+
+      {/* Log Album Button */}
+      <Pressable
+        onPress={() => setLogModalVisible(true)}
+        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+        className="absolute bottom-24 right-6 bg-primary rounded-full w-16 h-16 items-center justify-center shadow-lg"
+      >
+        <Text className="text-2xl">+</Text>
+      </Pressable>
+
+      {/* Log Album Modal */}
+      <LogAlbumModal
+        visible={logModalVisible}
+        onClose={() => setLogModalVisible(false)}
+        onSubmit={handleLogAlbum}
+      />
+    </>
   );
 }
