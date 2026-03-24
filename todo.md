@@ -56,3 +56,10 @@
 - [x] Add user profile viewing capability
 - [x] Add follow button on user profiles
 - [x] Test all fixes end-to-end
+
+## Phase 7 - UI Cleanup & Polish
+- [x] Move log album button to bottom of screen (above tab bar)
+- [x] Ensure album covers always render with fallback placeholder
+- [x] Replace heart emoji with themed icon (music note in circular button)
+- [x] Replace comment emoji with themed icon (thought bubble in circular button)
+- [x] Test all UI changes

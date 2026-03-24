@@ -190,11 +190,20 @@ export default function HomeScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
               >
                 <View className="flex-row gap-3 mb-3">
-                  {/* Album Cover */}
-                  <Image
-                    source={{ uri: item.coverUrl }}
-                    style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.border }}
-                  />
+                  {/* Album Cover with Fallback */}
+                  <View style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.border, overflow: 'hidden' }}>
+                    {item.coverUrl ? (
+                      <Image
+                        source={{ uri: item.coverUrl }}
+                        style={{ width: '100%', height: '100%', borderRadius: 8 }}
+                        onError={() => console.log('Image failed to load')}
+                      />
+                    ) : (
+                      <View className="w-full h-full bg-primary items-center justify-center">
+                        <Text className="text-2xl text-background">♫</Text>
+                      </View>
+                    )}
+                  </View>
                   
                   {/* Album Info */}
                   <View className="flex-1">
@@ -238,7 +247,9 @@ export default function HomeScreen() {
                   style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
                   className="flex-row items-center gap-1"
                 >
-                  <Text className="text-lg">{likedLogs.has(item.id) ? "❤️" : "🤍"}</Text>
+                  <View className={`w-6 h-6 rounded-full items-center justify-center ${ likedLogs.has(item.id) ? 'bg-primary' : 'bg-surface border border-border'}`}>
+                    <Text className={`text-sm ${ likedLogs.has(item.id) ? 'text-background' : 'text-muted'}`}>♫</Text>
+                  </View>
                   <Text className="text-sm text-muted">{item.likes}</Text>
                 </Pressable>
                 <Pressable
@@ -250,7 +261,9 @@ export default function HomeScreen() {
                   style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
                   className="flex-row items-center gap-1"
                 >
-                  <Text className="text-lg">💬</Text>
+                  <View className="w-6 h-6 rounded-full items-center justify-center bg-surface border border-border">
+                    <Text className="text-sm text-muted">💭</Text>
+                  </View>
                   <Text className="text-sm text-muted">{item.comments.length}</Text>
                 </Pressable>
               </View>
@@ -266,13 +279,13 @@ export default function HomeScreen() {
         />
       </ScreenContainer>
 
-      {/* Log Album Button */}
+      {/* Log Album Button - Positioned at bottom above tab bar */}
       <Pressable
         onPress={() => setLogModalVisible(true)}
-        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-        className="absolute bottom-20 right-6 bg-primary rounded-full w-16 h-16 items-center justify-center shadow-lg"
+        style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}
+        className="absolute bottom-24 right-6 bg-primary rounded-full w-16 h-16 items-center justify-center shadow-lg"
       >
-        <Text className="text-2xl text-background font-bold">+</Text>
+        <Text className="text-3xl text-background font-bold">+</Text>
       </Pressable>
 
       {/* Log Album Modal */}
