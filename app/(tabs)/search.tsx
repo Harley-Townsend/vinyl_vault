@@ -3,43 +3,30 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
-import { searchItunesAlbums, type ItunesAlbum } from "@/lib/itunes-service";
-import { searchLibrary, getFeaturedAlbums, getAllGenres, type LibraryAlbum } from "@/lib/music-library";
-
-type Album = ItunesAlbum | (LibraryAlbum & { id: string });
+import { searchSpotifyAlbums, type SpotifyAlbum } from "@/lib/spotify-service";
 
 export default function SearchScreen() {
   const colors = useColors();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-  const [albums, setAlbums] = useState<Album[]>(getFeaturedAlbums(20).map((a, i) => ({ ...a, id: `lib-${i}` })));
+  const [albums, setAlbums] = useState<SpotifyAlbum[]>([]);
   const [loading, setLoading] = useState(false);
-  const [genres, setGenres] = useState<string[]>([]);
-
-  useEffect(() => {
-    setGenres(["All", ...getAllGenres()]);
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (searchQuery.trim().length > 2) {
       const performSearch = async () => {
         setLoading(true);
+        setError(null);
         try {
-          // First try iTunes API
-          const itunesResults = await searchItunesAlbums(searchQuery, 30);
-          
-          if (itunesResults.length > 0) {
-            setAlbums(itunesResults);
-          } else {
-            // Fallback to local library
-            const libraryResults = searchLibrary(searchQuery);
-            setAlbums(libraryResults.map((a, i) => ({ ...a, id: `lib-${i}` })));
+          const results = await searchSpotifyAlbums(searchQuery, 50);
+          setAlbums(results);
+          if (results.length === 0) {
+            setError("No albums found. Try a different search.");
           }
-        } catch (error) {
-          console.error("Search error:", error);
-          // Fallback to local library on error
-          const libraryResults = searchLibrary(searchQuery);
-          setAlbums(libraryResults.map((a, i) => ({ ...a, id: `lib-${i}` })));
+        } catch (err) {
+          console.error("Search error:", err);
+          setError("Error searching albums. Please try again.");
+          setAlbums([]);
         } finally {
           setLoading(false);
         }
@@ -48,19 +35,15 @@ export default function SearchScreen() {
       const timer = setTimeout(performSearch, 500);
       return () => clearTimeout(timer);
     } else {
-      // Show featured albums when no search
-      setAlbums(getFeaturedAlbums(20).map((a, i) => ({ ...a, id: `lib-${i}` })));
+      setAlbums([]);
+      setError(null);
     }
   }, [searchQuery]);
-
-  const filteredAlbums = selectedGenre && selectedGenre !== "All"
-    ? albums.filter((album) => "genre" in album && album.genre === selectedGenre)
-    : albums;
 
   return (
     <ScreenContainer className="p-0">
       <FlatList
-        data={filteredAlbums}
+        data={albums}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
@@ -72,23 +55,23 @@ export default function SearchScreen() {
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
           >
             <View className="bg-surface rounded-lg overflow-hidden shadow-sm">
-              <Image
-                source={{ uri: "coverArtUrl" in item ? item.coverArtUrl : item.coverUrl }}
-                style={{ width: "100%", height: 150, backgroundColor: colors.border }}
-                defaultSource={require("@/assets/images/icon.png")}
-              />
+              {item.coverUrl ? (
+                <Image
+                  source={{ uri: item.coverUrl }}
+                  style={{ width: "100%", height: 150, backgroundColor: colors.border }}
+                />
+              ) : (
+                <View style={{ width: "100%", height: 150, backgroundColor: colors.border }} />
+              )}
               <View className="p-3">
                 <Text className="text-sm font-bold text-foreground" numberOfLines={2}>
                   {item.title}
                 </Text>
                 <Text className="text-xs text-muted mt-1" numberOfLines={1}>
-                  {"artistName" in item ? item.artistName : item.artist}
+                  {item.artist}
                 </Text>
-                {"releaseDate" in item && item.releaseDate && (
+                {item.releaseDate && (
                   <Text className="text-xs text-muted mt-1">{item.releaseDate.substring(0, 4)}</Text>
-                )}
-                {"year" in item && item.year && (
-                  <Text className="text-xs text-muted mt-1">{item.year}</Text>
                 )}
               </View>
             </View>
@@ -107,69 +90,30 @@ export default function SearchScreen() {
               className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground mb-4"
             />
 
-            {/* Genre Filter */}
-            {genres.length > 0 && (
-              <>
-                <Text className="text-sm font-semibold text-foreground mb-2">Genre</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-                  {genres.map((genre) => (
-                    <Pressable
-                      key={genre}
-                      onPress={() => setSelectedGenre(genre === "All" ? null : genre)}
-                      style={({ pressed }) => [
-                        {
-                          backgroundColor:
-                            (genre === "All" && !selectedGenre) || selectedGenre === genre
-                              ? colors.primary
-                              : colors.surface,
-                          opacity: pressed ? 0.8 : 1,
-                        },
-                      ]}
-                      className="px-4 py-2 rounded-full mr-2 border border-border"
-                    >
-                      <Text
-                        style={{
-                          color:
-                            (genre === "All" && !selectedGenre) || selectedGenre === genre
-                              ? "#fff"
-                              : colors.foreground,
-                        }}
-                        className="text-sm font-semibold"
-                      >
-                        {genre}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </>
-            )}
-
             {/* Loading State */}
             {loading && (
               <View className="flex-row items-center gap-2 mb-4">
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text className="text-sm text-muted">Searching...</Text>
+                <Text className="text-sm text-muted">Searching Spotify...</Text>
               </View>
             )}
 
-            {/* Results Count */}
-            {!loading && (
-              <Text className="text-sm text-muted mb-4">
-                {filteredAlbums.length} albums found
-              </Text>
+            {/* Error State */}
+            {error && !loading && (
+              <Text className="text-sm text-error mb-4">{error}</Text>
             )}
 
-            {/* Empty State */}
-            {!loading && searchQuery.trim().length > 2 && filteredAlbums.length === 0 && (
-              <Text className="text-sm text-muted text-center py-8">
-                No albums found. Try a different search.
+            {/* Results Count */}
+            {!loading && albums.length > 0 && (
+              <Text className="text-sm text-muted mb-4">
+                {albums.length} albums found
               </Text>
             )}
 
             {/* Initial State */}
             {searchQuery.trim().length === 0 && (
-              <Text className="text-sm text-muted text-center py-2">
-                Featuring popular albums...
+              <Text className="text-sm text-muted text-center py-8">
+                Start typing to search for albums on Spotify...
               </Text>
             )}
           </View>

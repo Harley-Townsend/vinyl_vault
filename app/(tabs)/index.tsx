@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, Pressable, Image, FlatList } from "react-native";
+import { ScrollView, Text, View, Pressable, Image, FlatList, TextInput, Modal } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
@@ -36,18 +36,42 @@ function StarRating({ rating, onRate, editable = false }: { rating: number; onRa
   return <View className="flex-row">{stars}</View>;
 }
 
-// Mock album log data with real album covers
-const mockLogs = [
+interface Comment {
+  id: number;
+  userName: string;
+  text: string;
+  timestamp: string;
+}
+
+interface AlbumLog {
+  id: number;
+  albumTitle: string;
+  artist: string;
+  rating: number;
+  format: string;
+  coverUrl: string;
+  review: string;
+  userName: string;
+  likes: number;
+  comments: Comment[];
+}
+
+// Mock album log data with Spotify artwork
+const mockLogs: AlbumLog[] = [
   {
     id: 1,
     albumTitle: "Midnights",
     artist: "Taylor Swift",
     rating: 4.5,
     format: "Vinyl",
-    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/f4/e7/5af4e7d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/886447572622.jpg/600x600bb.jpg",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273e8b8c8b8a8a8a8a8a8a8a8a",
     review: "Amazing album! Love the production.",
     userName: "musiclover92",
     likes: 234,
+    comments: [
+      { id: 1, userName: "user123", text: "Totally agree! Lavender edition is beautiful", timestamp: "2h ago" },
+      { id: 2, userName: "vinylhead", text: "The vinyl pressing sounds incredible", timestamp: "1h ago" },
+    ],
   },
   {
     id: 2,
@@ -55,10 +79,13 @@ const mockLogs = [
     artist: "Fleetwood Mac",
     rating: 5,
     format: "CD",
-    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/7c/5a/f8/7c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00008811927308.600x600-75.jpg/600x600bb.jpg",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273f1f1f1f1f1f1f1f1f1f1f1f",
     review: "Classic masterpiece. Never gets old.",
     userName: "vinylcollector",
     likes: 567,
+    comments: [
+      { id: 3, userName: "classicrock_fan", text: "One of the best albums ever made", timestamp: "3h ago" },
+    ],
   },
   {
     id: 3,
@@ -66,32 +93,11 @@ const mockLogs = [
     artist: "The Weeknd",
     rating: 4,
     format: "Spotify",
-    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/4c/5a/f8/4c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602438695622.600x600-75.jpg/600x600bb.jpg",
+    coverUrl: "https://i.scdn.co/image/ab67616d0000b273a2a2a2a2a2a2a2a2a2a2a2a",
     review: "Great synth-pop vibes throughout.",
     userName: "synthwave_fan",
     likes: 189,
-  },
-  {
-    id: 4,
-    albumTitle: "Abbey Road",
-    artist: "The Beatles",
-    rating: 5,
-    format: "Vinyl",
-    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/8c/5a/f8/8c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602498651088.600x600-75.jpg/600x600bb.jpg",
-    review: "The greatest album ever made.",
-    userName: "beatles_fan",
-    likes: 892,
-  },
-  {
-    id: 5,
-    albumTitle: "Thriller",
-    artist: "Michael Jackson",
-    rating: 5,
-    format: "CD",
-    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/9c/5a/f8/9c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602498651088.600x600-75.jpg/600x600bb.jpg",
-    review: "Iconic. Timeless. Perfect.",
-    userName: "pop_lover",
-    likes: 1205,
+    comments: [],
   },
 ];
 
@@ -100,6 +106,9 @@ export default function HomeScreen() {
   const [likedLogs, setLikedLogs] = useState<Set<number>>(new Set());
   const [logModalVisible, setLogModalVisible] = useState(false);
   const [logs, setLogs] = useState(mockLogs);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState("");
 
   const toggleLike = (logId: number) => {
     const newLiked = new Set(likedLogs);
@@ -113,20 +122,50 @@ export default function HomeScreen() {
   };
 
   const handleLogAlbum = (data: LogAlbumData) => {
-    const newLog = {
+    const newLog: AlbumLog = {
       id: logs.length + 1,
       albumTitle: data.albumTitle,
       artist: data.artist,
       rating: data.rating,
       format: data.format,
-      coverUrl: "https://via.placeholder.com/100",
+      coverUrl: "https://via.placeholder.com/150",
       review: data.review,
       userName: "You",
       likes: 0,
+      comments: [],
     };
     setLogs([newLog, ...logs]);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
+
+  const handleAddComment = () => {
+    if (!commentText.trim() || selectedLogId === null) return;
+
+    setLogs(
+      logs.map((log) => {
+        if (log.id === selectedLogId) {
+          return {
+            ...log,
+            comments: [
+              ...log.comments,
+              {
+                id: log.comments.length + 1,
+                userName: "You",
+                text: commentText,
+                timestamp: "now",
+              },
+            ],
+          };
+        }
+        return log;
+      })
+    );
+
+    setCommentText("");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const selectedLog = logs.find((log) => log.id === selectedLogId);
 
   return (
     <>
@@ -161,6 +200,21 @@ export default function HomeScreen() {
               {/* Review */}
               <Text className="text-sm text-foreground mb-3">{item.review}</Text>
 
+              {/* Comments Preview */}
+              {item.comments.length > 0 && (
+                <View className="bg-surface rounded-lg p-2 mb-3">
+                  {item.comments.slice(0, 2).map((comment) => (
+                    <View key={comment.id} className="mb-2">
+                      <Text className="text-xs font-semibold text-foreground">{comment.userName}</Text>
+                      <Text className="text-xs text-muted">{comment.text}</Text>
+                    </View>
+                  ))}
+                  {item.comments.length > 2 && (
+                    <Text className="text-xs text-primary font-semibold">+{item.comments.length - 2} more</Text>
+                  )}
+                </View>
+              )}
+
               {/* Interactions */}
               <View className="flex-row gap-4">
                 <Pressable
@@ -171,9 +225,17 @@ export default function HomeScreen() {
                   <Text className="text-lg">{likedLogs.has(item.id) ? "❤️" : "🤍"}</Text>
                   <Text className="text-sm text-muted">{item.likes}</Text>
                 </Pressable>
-                <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]} className="flex-row items-center gap-1">
+                <Pressable
+                  onPress={() => {
+                    setSelectedLogId(item.id);
+                    setCommentModalVisible(true);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                  className="flex-row items-center gap-1"
+                >
                   <Text className="text-lg">💬</Text>
-                  <Text className="text-sm text-muted">Comment</Text>
+                  <Text className="text-sm text-muted">{item.comments.length}</Text>
                 </Pressable>
               </View>
             </View>
@@ -203,6 +265,72 @@ export default function HomeScreen() {
         onClose={() => setLogModalVisible(false)}
         onSubmit={handleLogAlbum}
       />
+
+      {/* Comments Modal */}
+      <Modal
+        visible={commentModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCommentModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <ScreenContainer className="p-4">
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl font-bold text-foreground">Comments</Text>
+              <Pressable onPress={() => setCommentModalVisible(false)}>
+                <Text className="text-2xl">✕</Text>
+              </Pressable>
+            </View>
+
+            {/* Comments List */}
+            <FlatList
+              data={selectedLog?.comments || []}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => (
+                <View className="bg-surface rounded-lg p-3 mb-3">
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-sm font-semibold text-foreground">{item.userName}</Text>
+                    <Text className="text-xs text-muted">{item.timestamp}</Text>
+                  </View>
+                  <Text className="text-sm text-foreground">{item.text}</Text>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text className="text-center text-muted py-8">No comments yet. Be the first!</Text>
+              }
+              scrollEnabled={true}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            />
+
+            {/* Comment Input */}
+            <View className="border-t border-border pt-4">
+              <TextInput
+                placeholder="Add a comment..."
+                placeholderTextColor={colors.muted}
+                value={commentText}
+                onChangeText={setCommentText}
+                multiline
+                className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground mb-3"
+                style={{ minHeight: 80 }}
+              />
+              <Pressable
+                onPress={handleAddComment}
+                disabled={!commentText.trim()}
+                style={({ pressed }) => [
+                  {
+                    backgroundColor: commentText.trim() ? colors.primary : colors.border,
+                    opacity: pressed ? 0.8 : 1,
+                  },
+                ]}
+                className="rounded-lg py-3 items-center"
+              >
+                <Text className="text-white font-semibold">Post Comment</Text>
+              </Pressable>
+            </View>
+          </ScreenContainer>
+        </View>
+      </Modal>
     </>
   );
 }
