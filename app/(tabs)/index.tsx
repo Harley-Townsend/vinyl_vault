@@ -36,7 +36,7 @@ function StarRating({ rating, onRate, editable = false }: { rating: number; onRa
   return <View className="flex-row">{stars}</View>;
 }
 
-// Mock album log data
+// Mock album log data with real album covers
 const mockLogs = [
   {
     id: 1,
@@ -44,7 +44,7 @@ const mockLogs = [
     artist: "Taylor Swift",
     rating: 4.5,
     format: "Vinyl",
-    coverUrl: "https://via.placeholder.com/100",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/5a/f4/e7/5af4e7d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/886447572622.jpg/600x600bb.jpg",
     review: "Amazing album! Love the production.",
     userName: "musiclover92",
     likes: 234,
@@ -55,7 +55,7 @@ const mockLogs = [
     artist: "Fleetwood Mac",
     rating: 5,
     format: "CD",
-    coverUrl: "https://via.placeholder.com/100",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/7c/5a/f8/7c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00008811927308.600x600-75.jpg/600x600bb.jpg",
     review: "Classic masterpiece. Never gets old.",
     userName: "vinylcollector",
     likes: 567,
@@ -66,10 +66,32 @@ const mockLogs = [
     artist: "The Weeknd",
     rating: 4,
     format: "Spotify",
-    coverUrl: "https://via.placeholder.com/100",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/4c/5a/f8/4c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602438695622.600x600-75.jpg/600x600bb.jpg",
     review: "Great synth-pop vibes throughout.",
     userName: "synthwave_fan",
     likes: 189,
+  },
+  {
+    id: 4,
+    albumTitle: "Abbey Road",
+    artist: "The Beatles",
+    rating: 5,
+    format: "Vinyl",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/8c/5a/f8/8c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602498651088.600x600-75.jpg/600x600bb.jpg",
+    review: "The greatest album ever made.",
+    userName: "beatles_fan",
+    likes: 892,
+  },
+  {
+    id: 5,
+    albumTitle: "Thriller",
+    artist: "Michael Jackson",
+    rating: 5,
+    format: "CD",
+    coverUrl: "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/9c/5a/f8/9c5af8d8-5c8c-f7c9-e1b9-e8c8d8b8a8a8/00602498651088.600x600-75.jpg/600x600bb.jpg",
+    review: "Iconic. Timeless. Perfect.",
+    userName: "pop_lover",
+    likes: 1205,
   },
 ];
 
@@ -111,64 +133,59 @@ export default function HomeScreen() {
       <ScreenContainer className="p-0">
         <FlatList
           data={logs}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View className="border-b border-border p-4">
-            {/* Album Header */}
-            <View className="flex-row gap-3 mb-3">
-              <Image
-                source={{ uri: item.coverUrl }}
-                style={{ width: 80, height: 80, borderRadius: 8 }}
-              />
-              <View className="flex-1">
-                <Text className="text-sm text-muted">{item.userName}</Text>
-                <Text className="text-lg font-bold text-foreground mt-1">{item.albumTitle}</Text>
-                <Text className="text-sm text-muted">{item.artist}</Text>
-                <View className="mt-2">
-                  <StarRating rating={item.rating} />
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View className="border-b border-border p-4">
+              {/* Album Header */}
+              <View className="flex-row gap-3 mb-3">
+                {/* Album Cover */}
+                <Image
+                  source={{ uri: item.coverUrl }}
+                  style={{ width: 80, height: 80, borderRadius: 8, backgroundColor: colors.border }}
+                />
+                
+                {/* Album Info */}
+                <View className="flex-1">
+                  <Text className="text-xs text-muted mb-1">{item.userName}</Text>
+                  <Text className="text-lg font-bold text-foreground">{item.albumTitle}</Text>
+                  <Text className="text-sm text-muted">{item.artist}</Text>
+                  <View className="flex-row items-center gap-2 mt-1">
+                    <StarRating rating={item.rating} />
+                    <Text className="text-xs bg-primary px-2 py-1 rounded text-white font-semibold">
+                      {item.format}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Format Badge */}
-            <View className="mb-2">
-              <View
-                style={{ backgroundColor: colors.primary + "20" }}
-                className="inline-flex px-3 py-1 rounded-full self-start"
-              >
-                <Text style={{ color: colors.primary }} className="text-xs font-semibold">
-                  {item.format}
-                </Text>
+              {/* Review */}
+              <Text className="text-sm text-foreground mb-3">{item.review}</Text>
+
+              {/* Interactions */}
+              <View className="flex-row gap-4">
+                <Pressable
+                  onPress={() => toggleLike(item.id)}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                  className="flex-row items-center gap-1"
+                >
+                  <Text className="text-lg">{likedLogs.has(item.id) ? "❤️" : "🤍"}</Text>
+                  <Text className="text-sm text-muted">{item.likes}</Text>
+                </Pressable>
+                <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]} className="flex-row items-center gap-1">
+                  <Text className="text-lg">💬</Text>
+                  <Text className="text-sm text-muted">Comment</Text>
+                </Pressable>
               </View>
             </View>
-
-            {/* Review */}
-            <Text className="text-sm text-foreground mb-3">{item.review}</Text>
-
-            {/* Actions */}
-            <View className="flex-row gap-4">
-              <Pressable
-                onPress={() => toggleLike(item.id)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-base">
-                  {likedLogs.has(item.id) ? "❤️" : "🤍"} {item.likes + (likedLogs.has(item.id) ? 1 : 0)}
-                </Text>
-              </Pressable>
-              <Pressable style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                <Text className="text-base">💬 Comment</Text>
-              </Pressable>
+          )}
+          ListHeaderComponent={
+            <View className="p-4 pb-2">
+              <Text className="text-3xl font-bold text-foreground mb-2">Vinyl Vault</Text>
+              <Text className="text-muted">Community album logs</Text>
             </View>
-          </View>
-        )}
-        ListHeaderComponent={
-          <View className="p-4 pb-0">
-            <Text className="text-3xl font-bold text-foreground mb-2">Vinyl Vault</Text>
-            <Text className="text-muted">Community album logs</Text>
-          </View>
-        }
-        scrollEnabled={true}
-      />
+          }
+          scrollEnabled={true}
+        />
       </ScreenContainer>
 
       {/* Log Album Button */}

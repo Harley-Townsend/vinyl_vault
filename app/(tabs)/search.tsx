@@ -3,49 +3,43 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
-import { searchAlbums, type Album } from "@/lib/musicbrainz-service";
+import { searchItunesAlbums, type ItunesAlbum } from "@/lib/itunes-service";
+import { searchLibrary, getFeaturedAlbums, getAllGenres, type LibraryAlbum } from "@/lib/music-library";
 
-// Default albums to show
-const defaultAlbums: Album[] = [
-  {
-    id: "1",
-    mbid: "1",
-    title: "Midnights",
-    artistName: "Taylor Swift",
-    releaseDate: "2022",
-    genres: ["Pop"],
-    coverArtUrl: "https://via.placeholder.com/150",
-  },
-  {
-    id: "2",
-    mbid: "2",
-    title: "Rumours",
-    artistName: "Fleetwood Mac",
-    releaseDate: "1977",
-    genres: ["Rock"],
-    coverArtUrl: "https://via.placeholder.com/150",
-  },
-];
+type Album = ItunesAlbum | (LibraryAlbum & { id: string });
 
 export default function SearchScreen() {
   const colors = useColors();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-  const [albums, setAlbums] = useState<Album[]>(defaultAlbums);
+  const [albums, setAlbums] = useState<Album[]>(getFeaturedAlbums(20).map((a, i) => ({ ...a, id: `lib-${i}` })));
   const [loading, setLoading] = useState(false);
+  const [genres, setGenres] = useState<string[]>([]);
 
-  const genres = ["All", "Pop", "Rock", "Jazz", "Hip-Hop", "Classical", "Electronic"];
+  useEffect(() => {
+    setGenres(["All", ...getAllGenres()]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim().length > 2) {
       const performSearch = async () => {
         setLoading(true);
         try {
-          const results = await searchAlbums(searchQuery, 20);
-          setAlbums(results.length > 0 ? results : defaultAlbums);
+          // First try iTunes API
+          const itunesResults = await searchItunesAlbums(searchQuery, 30);
+          
+          if (itunesResults.length > 0) {
+            setAlbums(itunesResults);
+          } else {
+            // Fallback to local library
+            const libraryResults = searchLibrary(searchQuery);
+            setAlbums(libraryResults.map((a, i) => ({ ...a, id: `lib-${i}` })));
+          }
         } catch (error) {
           console.error("Search error:", error);
-          setAlbums(defaultAlbums);
+          // Fallback to local library on error
+          const libraryResults = searchLibrary(searchQuery);
+          setAlbums(libraryResults.map((a, i) => ({ ...a, id: `lib-${i}` })));
         } finally {
           setLoading(false);
         }
@@ -54,20 +48,20 @@ export default function SearchScreen() {
       const timer = setTimeout(performSearch, 500);
       return () => clearTimeout(timer);
     } else {
-      setAlbums(defaultAlbums);
+      // Show featured albums when no search
+      setAlbums(getFeaturedAlbums(20).map((a, i) => ({ ...a, id: `lib-${i}` })));
     }
   }, [searchQuery]);
 
-  const filteredAlbums = albums.filter((album) => {
-    const matchesGenre = !selectedGenre || selectedGenre === "All" || album.genres?.includes(selectedGenre);
-    return matchesGenre;
-  });
+  const filteredAlbums = selectedGenre && selectedGenre !== "All"
+    ? albums.filter((album) => "genre" in album && album.genre === selectedGenre)
+    : albums;
 
   return (
     <ScreenContainer className="p-0">
       <FlatList
         data={filteredAlbums}
-        keyExtractor={(item) => item.mbid}
+        keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
         renderItem={({ item }) => (
@@ -77,19 +71,25 @@ export default function SearchScreen() {
             }}
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1, flex: 1 }]}
           >
-            <View className="bg-surface rounded-lg overflow-hidden">
+            <View className="bg-surface rounded-lg overflow-hidden shadow-sm">
               <Image
-                source={{ uri: item.coverArtUrl || "https://via.placeholder.com/150" }}
+                source={{ uri: "coverArtUrl" in item ? item.coverArtUrl : item.coverUrl }}
                 style={{ width: "100%", height: 150, backgroundColor: colors.border }}
+                defaultSource={require("@/assets/images/icon.png")}
               />
               <View className="p-3">
                 <Text className="text-sm font-bold text-foreground" numberOfLines={2}>
                   {item.title}
                 </Text>
                 <Text className="text-xs text-muted mt-1" numberOfLines={1}>
-                  {item.artistName}
+                  {"artistName" in item ? item.artistName : item.artist}
                 </Text>
-                <Text className="text-xs text-muted mt-1">{item.releaseDate?.substring(0, 4)}</Text>
+                {"releaseDate" in item && item.releaseDate && (
+                  <Text className="text-xs text-muted mt-1">{item.releaseDate.substring(0, 4)}</Text>
+                )}
+                {"year" in item && item.year && (
+                  <Text className="text-xs text-muted mt-1">{item.year}</Text>
+                )}
               </View>
             </View>
           </Pressable>
@@ -108,48 +108,74 @@ export default function SearchScreen() {
             />
 
             {/* Genre Filter */}
-            <Text className="text-sm font-semibold text-foreground mb-2">Genre</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-              {genres.map((genre) => (
-                <Pressable
-                  key={genre}
-                  onPress={() => setSelectedGenre(genre === "All" ? null : genre)}
-                  style={({ pressed }) => [
-                    {
-                      backgroundColor:
-                        (genre === "All" && !selectedGenre) || selectedGenre === genre
-                          ? colors.primary
-                          : colors.surface,
-                      opacity: pressed ? 0.8 : 1,
-                    },
-                  ]}
-                  className="px-4 py-2 rounded-full mr-2 border border-border"
-                >
-                  <Text
-                    style={{
-                      color:
-                        (genre === "All" && !selectedGenre) || selectedGenre === genre
-                          ? "#fff"
-                          : colors.foreground,
-                    }}
-                    className="text-sm font-semibold"
-                  >
-                    {genre}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
+            {genres.length > 0 && (
+              <>
+                <Text className="text-sm font-semibold text-foreground mb-2">Genre</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+                  {genres.map((genre) => (
+                    <Pressable
+                      key={genre}
+                      onPress={() => setSelectedGenre(genre === "All" ? null : genre)}
+                      style={({ pressed }) => [
+                        {
+                          backgroundColor:
+                            (genre === "All" && !selectedGenre) || selectedGenre === genre
+                              ? colors.primary
+                              : colors.surface,
+                          opacity: pressed ? 0.8 : 1,
+                        },
+                      ]}
+                      className="px-4 py-2 rounded-full mr-2 border border-border"
+                    >
+                      <Text
+                        style={{
+                          color:
+                            (genre === "All" && !selectedGenre) || selectedGenre === genre
+                              ? "#fff"
+                              : colors.foreground,
+                        }}
+                        className="text-sm font-semibold"
+                      >
+                        {genre}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
+            {/* Loading State */}
             {loading && (
-              <View className="flex-row items-center gap-2 mb-3">
+              <View className="flex-row items-center gap-2 mb-4">
                 <ActivityIndicator size="small" color={colors.primary} />
                 <Text className="text-sm text-muted">Searching...</Text>
               </View>
             )}
-            <Text className="text-sm text-muted mb-3">{filteredAlbums.length} albums found</Text>
+
+            {/* Results Count */}
+            {!loading && (
+              <Text className="text-sm text-muted mb-4">
+                {filteredAlbums.length} albums found
+              </Text>
+            )}
+
+            {/* Empty State */}
+            {!loading && searchQuery.trim().length > 2 && filteredAlbums.length === 0 && (
+              <Text className="text-sm text-muted text-center py-8">
+                No albums found. Try a different search.
+              </Text>
+            )}
+
+            {/* Initial State */}
+            {searchQuery.trim().length === 0 && (
+              <Text className="text-sm text-muted text-center py-2">
+                Featuring popular albums...
+              </Text>
+            )}
           </View>
         }
         scrollEnabled={true}
+        contentContainerStyle={{ paddingBottom: 20 }}
       />
     </ScreenContainer>
   );
