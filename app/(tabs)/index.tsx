@@ -6,6 +6,7 @@ import { useState } from "react";
 import * as Haptics from "expo-haptics";
 import { LogAlbumModal, type LogAlbumData } from "@/components/log-album-modal";
 import { HalfStarRating } from "@/components/half-star-rating";
+import { useFollow } from "@/lib/follow-context";
 
 // Alias for compatibility
 const StarRating = HalfStarRating;
@@ -26,6 +27,7 @@ interface AlbumLog {
   coverUrl: string;
   review: string;
   userName: string;
+  userId: string;
   likes: number;
   comments: Comment[];
 }
@@ -41,6 +43,7 @@ const mockLogs: AlbumLog[] = [
     coverUrl: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5",
     review: "Amazing album! Love the production.",
     userName: "musiclover92",
+    userId: "musiclover92",
     likes: 234,
     comments: [
       { id: 1, userName: "user123", text: "Totally agree! Lavender edition is beautiful", timestamp: "2h ago" },
@@ -56,6 +59,7 @@ const mockLogs: AlbumLog[] = [
     coverUrl: "https://i.scdn.co/image/ab67616d0000b27357df7ce0eac715cf70e519a7",
     review: "Classic masterpiece. Never gets old.",
     userName: "vinylcollector",
+    userId: "vinylcollector",
     likes: 567,
     comments: [
       { id: 3, userName: "classicrock_fan", text: "One of the best albums ever made", timestamp: "3h ago" },
@@ -70,6 +74,7 @@ const mockLogs: AlbumLog[] = [
     coverUrl: "https://i.scdn.co/image/ab67616d0000b273a3eff72f62782fb589a492f9",
     review: "Great synth-pop vibes throughout.",
     userName: "synthwave_fan",
+    userId: "synthwave_fan",
     likes: 189,
     comments: [],
   },
@@ -78,12 +83,16 @@ const mockLogs: AlbumLog[] = [
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { followedUsers } = useFollow();
   const [likedLogs, setLikedLogs] = useState<Set<number>>(new Set());
   const [logModalVisible, setLogModalVisible] = useState(false);
   const [logs, setLogs] = useState(mockLogs);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
   const [commentText, setCommentText] = useState("");
+
+  // Filter logs to show only from followed users
+  const filteredLogs = logs.filter((log) => followedUsers.has(log.userId));
 
   const handleAlbumTap = (log: typeof mockLogs[0]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -122,6 +131,7 @@ export default function HomeScreen() {
       coverUrl: data.coverUrl,
       review: data.review,
       userName: "You",
+      userId: "current-user",
       likes: 0,
       comments: [],
     };
@@ -162,7 +172,7 @@ export default function HomeScreen() {
     <>
       <ScreenContainer className="p-0">
         <FlatList
-          data={logs}
+          data={filteredLogs}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View className="border-b border-border p-4">
