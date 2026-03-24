@@ -14,6 +14,7 @@ const StarRating = HalfStarRating;
 interface Comment {
   id: number;
   userName: string;
+  userId: string;
   text: string;
   timestamp: string;
 }
@@ -46,8 +47,8 @@ const mockLogs: AlbumLog[] = [
     userId: "musiclover92",
     likes: 234,
     comments: [
-      { id: 1, userName: "user123", text: "Totally agree! Lavender edition is beautiful", timestamp: "2h ago" },
-      { id: 2, userName: "vinylhead", text: "The vinyl pressing sounds incredible", timestamp: "1h ago" },
+      { id: 1, userName: "user123", userId: "user123", text: "Totally agree! Lavender edition is beautiful", timestamp: "2h ago" },
+      { id: 2, userName: "vinylhead", userId: "vinylhead", text: "The vinyl pressing sounds incredible", timestamp: "1h ago" },
     ],
   },
   {
@@ -62,7 +63,7 @@ const mockLogs: AlbumLog[] = [
     userId: "vinylcollector",
     likes: 567,
     comments: [
-      { id: 3, userName: "classicrock_fan", text: "One of the best albums ever made", timestamp: "3h ago" },
+      { id: 3, userName: "classicrock_fan", userId: "classicrock_fan", text: "One of the best albums ever made", timestamp: "3h ago" },
     ],
   },
   {
@@ -160,6 +161,7 @@ export default function HomeScreen() {
               {
                 id: log.comments.length + 1,
                 userName: "You",
+                userId: "current-user",
                 text: commentText,
                 timestamp: "now",
               },
@@ -230,7 +232,9 @@ export default function HomeScreen() {
                 <View className="bg-surface rounded-lg p-2 mb-3">
                   {item.comments.slice(0, 2).map((comment) => (
                     <View key={comment.id} className="mb-2">
-                      <Text className="text-xs font-semibold text-foreground">{comment.userName}</Text>
+                      <Pressable onPress={() => handleUserTap(comment.userId)}>
+                        <Text className="text-xs font-semibold text-primary">{comment.userName}</Text>
+                      </Pressable>
                       <Text className="text-xs text-muted">{comment.text}</Text>
                     </View>
                   ))}
@@ -247,9 +251,7 @@ export default function HomeScreen() {
                   style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
                   className="flex-row items-center gap-1"
                 >
-                  <View className={`w-6 h-6 rounded-full items-center justify-center ${ likedLogs.has(item.id) ? 'bg-primary' : 'bg-surface border border-border'}`}>
-                    <Text className={`text-sm ${ likedLogs.has(item.id) ? 'text-background' : 'text-muted'}`}>♫</Text>
-                  </View>
+                  <Text className={`text-lg ${ likedLogs.has(item.id) ? 'text-primary' : 'text-muted'}`}>{likedLogs.has(item.id) ? '❤️' : '🤍'}</Text>
                   <Text className="text-sm text-muted">{item.likes}</Text>
                 </Pressable>
                 <Pressable

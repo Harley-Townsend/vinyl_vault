@@ -63,3 +63,11 @@
 - [x] Replace heart emoji with themed icon (music note in circular button)
 - [x] Replace comment emoji with themed icon (thought bubble in circular button)
 - [x] Test all UI changes
+
+## Phase 8 - Social Features & Profile Enhancements
+- [x] Add tap-to-profile in comment sections
+- [x] Create diary/timeline section on profile
+- [x] Add filtering by score and date in diary
+- [x] Change heart emoji to blue (primary color)
+- [x] Remove clutter buttons at bottom tab bar
+- [x] Test all social features
