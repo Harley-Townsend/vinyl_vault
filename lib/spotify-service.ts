@@ -27,7 +27,9 @@ async function getSpotifyAccessToken(): Promise<string> {
     return spotifyAccessToken;
   }
 
-  const clientId = process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID;
+  // In React Native, we can't directly access server env vars
+  // We need to call a backend endpoint instead
+  const clientId = process.env.EXPO_PUBLIC_SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {

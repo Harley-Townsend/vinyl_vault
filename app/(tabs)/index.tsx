@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, Pressable, Image, FlatList, TextInput, Modal } from "react-native";
+import { ScrollView, Text, View, Pressable, Image, FlatList, TextInput, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState } from "react";
@@ -273,10 +273,13 @@ export default function HomeScreen() {
         animationType="slide"
         onRequestClose={() => setCommentModalVisible(false)}
       >
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-          <ScreenContainer className="p-4">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1, backgroundColor: colors.background }}
+        >
+          <View style={{ flex: 1, backgroundColor: colors.background }}>
             {/* Header */}
-            <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center justify-between p-4 border-b border-border">
               <Text className="text-2xl font-bold text-foreground">Comments</Text>
               <Pressable onPress={() => setCommentModalVisible(false)}>
                 <Text className="text-2xl">✕</Text>
@@ -288,7 +291,7 @@ export default function HomeScreen() {
               data={selectedLog?.comments || []}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
-                <View className="bg-surface rounded-lg p-3 mb-3">
+                <View className="bg-surface rounded-lg p-3 m-4 mb-2">
                   <View className="flex-row justify-between mb-1">
                     <Text className="text-sm font-semibold text-foreground">{item.userName}</Text>
                     <Text className="text-xs text-muted">{item.timestamp}</Text>
@@ -300,11 +303,11 @@ export default function HomeScreen() {
                 <Text className="text-center text-muted py-8">No comments yet. Be the first!</Text>
               }
               scrollEnabled={true}
-              contentContainerStyle={{ paddingBottom: 20 }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 10 }}
             />
 
-            {/* Comment Input */}
-            <View className="border-t border-border pt-4">
+            {/* Comment Input - Fixed at bottom */}
+            <View className="border-t border-border p-4 bg-background">
               <TextInput
                 placeholder="Add a comment..."
                 placeholderTextColor={colors.muted}
@@ -312,7 +315,7 @@ export default function HomeScreen() {
                 onChangeText={setCommentText}
                 multiline
                 className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground mb-3"
-                style={{ minHeight: 80 }}
+                style={{ minHeight: 60, maxHeight: 120 }}
               />
               <Pressable
                 onPress={handleAddComment}
@@ -328,8 +331,8 @@ export default function HomeScreen() {
                 <Text className="text-white font-semibold">Post Comment</Text>
               </Pressable>
             </View>
-          </ScreenContainer>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   );

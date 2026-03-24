@@ -3,12 +3,19 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
-import { searchSpotifyAlbums, type SpotifyAlbum } from "@/lib/spotify-service";
+
+interface Album {
+  id: string;
+  title: string;
+  artist: string;
+  releaseDate?: string;
+  coverUrl: string;
+}
 
 export default function SearchScreen() {
   const colors = useColors();
   const [searchQuery, setSearchQuery] = useState("");
-  const [albums, setAlbums] = useState<SpotifyAlbum[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +25,16 @@ export default function SearchScreen() {
         setLoading(true);
         setError(null);
         try {
-          const results = await searchSpotifyAlbums(searchQuery, 50);
+          const input = JSON.stringify({ query: searchQuery, limit: 50 });
+          const response = await fetch(`/api/trpc/spotify.search?input=${encodeURIComponent(input)}`);
+          
+          if (!response.ok) {
+            throw new Error("Search failed");
+          }
+          
+          const data = await response.json();
+          const results = data.result?.data || [];
+          
           setAlbums(results);
           if (results.length === 0) {
             setError("No albums found. Try a different search.");
