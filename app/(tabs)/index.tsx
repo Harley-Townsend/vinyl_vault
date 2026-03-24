@@ -110,6 +110,14 @@ export default function HomeScreen() {
     });
   };
 
+  const handleUserTap = (userId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: "/user-profile",
+      params: { userId },
+    });
+  };
+
   const toggleLike = (logId: number) => {
     const newLiked = new Set(likedLogs);
     if (newLiked.has(logId)) {
@@ -190,7 +198,9 @@ export default function HomeScreen() {
                   
                   {/* Album Info */}
                   <View className="flex-1">
-                  <Text className="text-xs text-muted mb-1">{item.userName}</Text>
+                  <Pressable onPress={() => handleUserTap(item.userId)}>
+                    <Text className="text-xs text-muted mb-1 font-semibold hover:underline">{item.userName}</Text>
+                  </Pressable>
                   <Text className="text-lg font-bold text-foreground">{item.albumTitle}</Text>
                   <Text className="text-sm text-muted">{item.artist}</Text>
                   <View className="flex-row items-center gap-2 mt-1">
@@ -260,9 +270,9 @@ export default function HomeScreen() {
       <Pressable
         onPress={() => setLogModalVisible(true)}
         style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-        className="absolute bottom-24 right-6 bg-primary rounded-full w-16 h-16 items-center justify-center shadow-lg"
+        className="absolute bottom-20 right-6 bg-primary rounded-full w-16 h-16 items-center justify-center shadow-lg"
       >
-        <Text className="text-2xl">+</Text>
+        <Text className="text-2xl text-background font-bold">+</Text>
       </Pressable>
 
       {/* Log Album Modal */}

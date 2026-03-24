@@ -20,8 +20,8 @@ interface FollowContextType {
 const FollowContext = createContext<FollowContextType | undefined>(undefined);
 
 export function FollowProvider({ children }: { children: ReactNode }) {
-  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set(["user123", "vinylcollector"]));
-  const [followers, setFollowers] = useState<Set<string>>(new Set(["musiclover92", "classicrock_fan"]));
+  const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set(["musiclover92", "vinylcollector", "synthwave_fan", "user123", "vinylhead"]));
+  const [followers, setFollowers] = useState<Set<string>>(new Set(["musiclover92", "classicrock_fan", "user123", "vinylhead"]));
 
   const isFollowing = (userId: string) => followedUsers.has(userId);
 

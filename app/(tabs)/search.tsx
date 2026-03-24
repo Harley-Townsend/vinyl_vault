@@ -1,8 +1,9 @@
-import { ScrollView, Text, View, Pressable, Image, TextInput, FlatList, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, Pressable, Image, FlatList, TextInput, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
 import * as Haptics from "expo-haptics";
+import { ALBUM_DATABASE, searchAlbums, getAlbumsByGenre } from "@/lib/album-database";
 
 interface Album {
   id: string;
@@ -10,6 +11,7 @@ interface Album {
   artist: string;
   releaseDate?: string;
   coverUrl: string;
+  genres?: string[];
 }
 
 export default function SearchScreen() {
@@ -20,46 +22,38 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (searchQuery.trim().length > 2) {
-      const performSearch = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const input = JSON.stringify({ query: searchQuery, limit: 50 });
-          const response = await fetch(`/api/trpc/spotify.search?input=${encodeURIComponent(input)}`);
-          
-          if (!response.ok) {
-            throw new Error("Search failed");
-          }
-          
-          const data = await response.json();
-          const results = data.result?.data || [];
-          
-          setAlbums(results);
-          if (results.length === 0) {
-            setError("No albums found. Try a different search.");
-          }
-        } catch (err) {
-          console.error("Search error:", err);
-          setError("Error searching albums. Please try again.");
-          setAlbums([]);
-        } finally {
-          setLoading(false);
+    if (searchQuery.trim().length > 0) {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Search local album database
+        const results = searchAlbums(searchQuery);
+        
+        setAlbums(results);
+        if (results.length === 0) {
+          setError("No albums found. Try a different search.");
         }
-      };
-
-      const timer = setTimeout(performSearch, 500);
-      return () => clearTimeout(timer);
+      } catch (err) {
+        console.error("Search error:", err);
+        setError("Error searching albums. Please try again.");
+        setAlbums([]);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setAlbums([]);
       setError(null);
     }
   }, [searchQuery]);
 
+  // Show featured albums when no search query
+  const displayAlbums = searchQuery.trim().length === 0 ? ALBUM_DATABASE.slice(0, 12) : albums;
+
   return (
     <ScreenContainer className="p-0">
       <FlatList
-        data={albums}
+        data={displayAlbums}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
@@ -110,7 +104,7 @@ export default function SearchScreen() {
             {loading && (
               <View className="flex-row items-center gap-2 mb-4">
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text className="text-sm text-muted">Searching Spotify...</Text>
+                <Text className="text-sm text-muted">Searching albums...</Text>
               </View>
             )}
 
@@ -120,16 +114,16 @@ export default function SearchScreen() {
             )}
 
             {/* Results Count */}
-            {!loading && albums.length > 0 && (
+            {!loading && searchQuery.trim().length > 0 && albums.length > 0 && (
               <Text className="text-sm text-muted mb-4">
                 {albums.length} albums found
               </Text>
             )}
 
-            {/* Initial State */}
+            {/* Initial State - Show Featured Albums */}
             {searchQuery.trim().length === 0 && (
-              <Text className="text-sm text-muted text-center py-8">
-                Start typing to search for albums on Spotify...
+              <Text className="text-sm text-muted mb-4">
+                Featured Albums
               </Text>
             )}
           </View>

@@ -48,3 +48,11 @@
 - [x] Verify personalized feed filtering
 - [x] Unit tests for follow system and stats (22 tests passing)
 - [ ] Save checkpoint after completion
+
+## Phase 6 - Bug Fixes (Critical)
+- [x] Fix album cover rendering on home feed (only one showing)
+- [x] Restore log album button visibility
+- [x] Restore search album suggestions
+- [x] Add user profile viewing capability
+- [x] Add follow button on user profiles
+- [x] Test all fixes end-to-end
