@@ -85,3 +85,12 @@
 - [x] Remove clutter buttons at bottom (keep only Settings)
 - [x] Test all fixes on mobile
 - [x] All 22 unit tests passing
+
+## Phase 11 - Rebranding to Groovebox
+- [x] Choose catchy one-word project name (Groovebox)
+- [x] Generate modern minimal app logo with blue and gold colors
+- [x] Copy logo to all required locations
+- [x] Update app.config.ts with new name and logo URL
+- [x] Update package.json project name
+- [x] Create README.md with new branding
+- [x] Test rebranding (all 22 tests passing)
