@@ -273,8 +273,8 @@ export default function HomeScreen() {
           )}
           ListHeaderComponent={
             <View className="p-6 pb-4 mt-2">
-              <Text className="text-4xl font-bold text-foreground mb-2">Vinyl Vault</Text>
-              <Text className="text-muted">Community album logs</Text>
+              <Text className="text-4xl font-bold text-foreground mb-2">Waxed</Text>
+              <Text className="text-muted">Discover and log your favorite albums</Text>
             </View>
           }
           scrollEnabled={true}

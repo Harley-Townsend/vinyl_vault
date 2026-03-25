@@ -1,4 +1,4 @@
-# Groovebox
+# Waxed
 
 A modern music album logging and discovery platform for vinyl enthusiasts and music lovers. Log your favorite albums, rate them with precision, connect with other music fans, and discover new music through your community.
 
@@ -77,10 +77,10 @@ assets/images/
 
 ## Branding
 
-**App Name:** Groovebox  
+**App Name:** Waxed  
 **Primary Color:** #0a7ea4 (Modern Blue)  
 **Accent Color:** #FFD700 (Gold)  
-**Logo:** Modern minimal design featuring a stylized box with vinyl record and sound bars
+**Logo:** Modern minimal design featuring a stylized vinyl record with musical notes and sound waves
 
 ## Future Enhancements
 
@@ -93,4 +93,4 @@ assets/images/
 
 ## License
 
-Private project for Groovebox
+Private project for Waxed
